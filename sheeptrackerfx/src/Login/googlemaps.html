@@ -1,0 +1,248 @@
+<!--
+To change this template, choose Tools | Templates
+and open the template in the editor.
+-->
+
+
+<!DOCTYPE html>
+
+
+<html>
+    
+
+    
+    
+    <head>
+        <meta charset=utf-8>
+        <title>KART</title>
+        
+        
+        
+        <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&libraries=places,drawing"></script>
+        <style>
+            #mapcanvas { 
+                position: absolute;
+                top: 5px;
+                height: 430px; width: 97% }
+            
+            #panel {
+                position:  fixed;
+                top: 5px;
+                left: 25%;
+                margin-left: 5px;
+                z-index: 5;
+                background-color: #fff;
+                padding: 5px;
+                border: 1px solid #999;
+      }
+        
+        </style>
+
+        
+<script>
+
+var map;
+var tempLat;
+var tempLng;
+
+var latNor = 65.403445;
+var lngNor = 14.194336;
+var latitude = 33.678476;
+var longitude = -116.242568;
+var pos = google.maps.LatLng(lat, lng);
+var drawingManager;
+var marker;
+var sheepMarker;
+
+var teller = 0;
+
+
+var count = 0;
+
+// Funksjon som laster inn kartet
+function loadmap() {
+    var options = {
+        zoom: 6,
+        center: new google.maps.LatLng(latNor, lngNor),
+        mapTypeId: google.maps.MapTypeId.HYBRID,
+        
+        disableDefaultUI : true,
+        zoomControl: true
+        
+        
+    }   
+    
+    map = new google.maps.Map(document.getElementById("mapcanvas"), options);
+    searchBox();
+     
+        if(teller !== 1){
+        
+            google.maps.event.addListener(map, 'click', function(event) {
+            tempLat = event.latLng.lat();
+            tempLng = event.latLng.lng();
+            placeMarker(event.latLng.lat(), event.latLng.lng() , event);
+ 
+             java.setLatLngReg(tempLat,tempLng);
+            });
+        
+           
+        
+    }
+        
+}
+ 
+ 
+//Funksjon for å mittstille kartet 
+function updateMap(lat, lng) {
+        initialLocation = new google.maps.LatLng(lat, lng);
+        map.setZoom(15);
+        map.setCenter(initialLocation);
+        placeMarker(initialLocation);
+        
+        count = 1;
+   
+}
+
+//Funksjon for å plassere gården
+function placeMarker(lat, lng, event) {
+    java.setLatLngReg(lat, lng);
+    initialLocation = new google.maps.LatLng(lat, lng);
+    if (teller !== 1){
+        if ( marker ){
+            marker.setPosition(initialLocation); 
+            marker.setDraggable(true);
+           
+
+        } else{
+             marker = new google.maps.Marker({
+                position: initialLocation,
+                draggable: true,
+                animation: google.maps.Animation.DROP,
+                map: map,
+                icon: 'farm.png'
+                
+            });
+
+
+        }
+    }
+    
+    //Legger til en listener som registrerer posisjonen til marker når den blir dratt bortover kartet
+     google.maps.event.addListener(marker,'drag',function(event) {
+                java.setLatLngReg(event.latLng.lat(), event.latLng.lng());
+             });
+
+     google.maps.event.addListener(marker,'dragend',function(event) {
+               java.setLatLngReg(event.latLng.lat(), event.latLng.lng());
+             });
+        
+
+}
+
+//Funksjon for å plassere alle sauer
+function placeAllSheeps(lat, lng, name){
+    initialLocation = new google.maps.LatLng(lat, lng);
+    marker.setDraggable(false);
+    sheepMarker = new google.maps.Marker({
+                   position: initialLocation,
+                   draggable: false,
+                   animation: google.maps.Animation.DROP,
+                   map: map,
+                   icon: 'sheep_icon.png',
+                   title: '' + name
+
+               });
+    teller = 1;    
+    }
+        
+//Metode som plasserer en valgt sau på kartet
+function placeMarkerForSheep(lat, lng, name) {
+    
+    marker.setDraggable(false);
+    initialLocation = new google.maps.LatLng(lat, lng);
+    if (teller !== 1){
+        if ( sheepMarker ){   
+            sheepMarker.setPosition(initialLocation); 
+            sheepMarker.setTitle(name);
+           
+
+        } else{
+             sheepMarker = new google.maps.Marker({
+                position: initialLocation,
+                draggable: false,
+                animation: google.maps.Animation.DROP,
+                map: map,
+                icon: 'sheep_icon.png',
+                title: '' + name
+                
+            });
+
+
+        }
+    }
+    teller = 1;
+}
+
+//Logikken til søkeboksen på kartet.
+function searchBox(){    
+
+    var markers = [];
+    
+    //  Lager søkefeltet og linker det opp til UI-elementet
+    var input = document.getElementById('target');
+    var searchBox = new google.maps.places.SearchBox(input);
+
+
+    // Lytter etter input fra brukern når brukern velger en plass fra listen.
+    // Returnerer den ønskede plassen
+    google.maps.event.addListener(searchBox, 'places_changed', function() {
+      var places = searchBox.getPlaces();
+      
+      for (var i = 0, marker; marker = markers[i]; i++) {
+        marker.setMap(null);
+      }
+
+      // Henter markør, plassnavn og lokasjon for hver plass
+      markers = [];
+      var bounds = new google.maps.LatLngBounds();
+      for (var i = 0, place; place = places[i]; i++) {
+        var image = {
+          url: place.icon,
+          size: new google.maps.Size(71, 71),
+          origin: new google.maps.Point(0, 0),
+          anchor: new google.maps.Point(17, 34),
+          scaledSize: new google.maps.Size(25, 25),
+
+        };
+
+        tempLat = place.geometry.location.lat();
+        tempLng = place.geometry.location.lng();
+
+        placeMarker(tempLat, tempLng);
+
+        java.setLatLngReg(tempLat, tempLng);
+
+        bounds.extend(place.geometry.location);
+      }
+      map.fitBounds(bounds);
+      map.setZoom(14);
+    });
+}
+
+</script>
+
+    <style>
+    #target {
+        width: 345px;
+    </style>
+    </head>
+     <body onload="loadmap()">
+        
+        <div id="panel">
+            <input id="target" type="text" placeholder="S&#248k">
+        </div>
+        
+        <div id="mapcanvas"></div>
+
+    </body>
+</html>
